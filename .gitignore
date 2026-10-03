@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------
+# Proprietary American Airlines data (under NDA). Never commit.
+# ---------------------------------------------------------------
+data/
+outputs/
+AA_*
+*.csv
+*.csv.gz
+*.parquet
+*.feather
+*.pkl
+*.pickle
+*.xlsx
+*.xls
+*.zip
+*.joblib
+
+# Notebooks can embed data in cell outputs; keep them local only.
+*.ipynb
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
