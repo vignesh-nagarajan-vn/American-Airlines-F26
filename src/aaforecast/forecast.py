@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from . import explain, scenario
-from .backtest import apply_intervals
+from .backtest import apply_aggregate_interval, apply_intervals
 from .config import AA_HUBS, RunConfig
 from .features import FeatureBuilder, driver_group, training_origins
 from .model import AnchorAdjustModel, relative_adjustment, training_mask
@@ -16,7 +16,8 @@ from .model import AnchorAdjustModel, relative_adjustment, training_mask
 log = logging.getLogger(__name__)
 
 
-def run_forecast(builder: FeatureBuilder, cfg: RunConfig, interval_table: pd.DataFrame | None, bridge_top_n: int = 2000) -> dict[str, pd.DataFrame]:
+def run_forecast(builder: FeatureBuilder, cfg: RunConfig, interval_table: pd.DataFrame | None,
+                 aggregate_table: pd.DataFrame | None = None, bridge_top_n: int = 2000) -> dict[str, pd.DataFrame]:
     n_months = len(builder.p.months)
     T = n_months - 1
     full = builder.build(training_origins(n_months, cfg.origin_step))
@@ -46,11 +47,13 @@ def run_forecast(builder: FeatureBuilder, cfg: RunConfig, interval_table: pd.Dat
     out["market_forecast"] = rows[cols].rename(columns={"anchor": "seasonal_anchor", "ttm": "trailing_12m"})
     out["driver_bridge_markets"] = bridge
     out["network_bridge"] = network_bridge(bridge)
-    out["hub_summary"] = hub_summary(rows, bridge)
+    out["hub_summary"] = hub_summary(rows, bridge, aggregate_table)
     out["watchlist"] = watchlist(rows)
-    sums = ["last_same_month", "anchor", "forecast", "lower", "upper"]
-    out["airport_forecast"] = rows.groupby(["org", "target_month"], as_index=False)[sums].sum().rename(columns={"org": "airport"})
-    out["network_forecast"] = rows.groupby("target_month", as_index=False)[sums].sum()
+    sums = ["last_same_month", "anchor", "forecast"]
+    airport = rows.groupby(["org", "target_month"], as_index=False)[sums].sum().rename(columns={"org": "airport"})
+    out["airport_forecast"] = apply_aggregate_interval(airport, aggregate_table, "airport")
+    network = rows.groupby("target_month", as_index=False)[sums].sum()
+    out["network_forecast"] = apply_aggregate_interval(network, aggregate_table, "network")
     out["scenarios"] = scenario.run_scenarios(model, rows, rows["forecast"].to_numpy(), cfg.shrink)
     out["feature_importance"] = feature_importance(model, train, cfg)
     return out
@@ -63,8 +66,12 @@ def network_bridge(bridge: pd.DataFrame) -> pd.DataFrame:
                          "effect_pct": np.expm1(agg.to_numpy())})
 
 
-def hub_summary(rows: pd.DataFrame, bridge: pd.DataFrame) -> pd.DataFrame:
-    """Local demand touching each AA hub, with the driver that moves it most."""
+def hub_summary(rows: pd.DataFrame, bridge: pd.DataFrame, aggregate_table: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Local demand touching each AA hub over the forecast window, with the driver that moves it most.
+
+    The band applies the backtest's monthly hub error to each month; summing
+    months treats their errors as fully correlated, which is conservative.
+    """
     drv = [c for c in bridge.columns if c.startswith("drv_") and c not in ("drv_typical", "drv_network")]
     out = []
     for hub in sorted(AA_HUBS):
@@ -77,13 +84,14 @@ def hub_summary(rows: pd.DataFrame, bridge: pd.DataFrame) -> pd.DataFrame:
             eff = explain.aggregate_bridge(b[drv], b["forecast"])
             k = eff.abs().idxmax()
             top = f"{explain.label(k)} ({np.expm1(eff[k]):+.1%})"
+        monthly = apply_aggregate_interval(sel.groupby("target_month", as_index=False)["forecast"].sum(), aggregate_table, "hub")
         out.append({
             "hub": hub,
             "markets": sel["market_id"].nunique(),
             "same_months_last_year": sel["last_same_month"].sum(),
             "forecast": sel["forecast"].sum(),
-            "lower": sel["lower"].sum(),
-            "upper": sel["upper"].sum(),
+            "lower": monthly["lower"].sum(),
+            "upper": monthly["upper"].sum(),
             "vs_last_year_pct": sel["forecast"].sum() / sel["last_same_month"].sum() - 1,
             "vs_anchor_pct": sel["forecast"].sum() / sel["anchor"].sum() - 1,
             "largest_driver": top,

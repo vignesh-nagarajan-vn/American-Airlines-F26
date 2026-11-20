@@ -82,16 +82,19 @@ def run_backtest(builder: FeatureBuilder, cfg: RunConfig) -> dict[str, pd.DataFr
     # Aggregation levels planners use: origin airport, AA hub touch, whole network.
     airport = pred.groupby(["fold", "org", "target_month"], as_index=False)[["y", *METHODS]].sum()
     out["airport_level"] = metrics.summarize(airport, METHODS)
-    hub_rows = []
+    hub_rows, hub_frames = [], []
     for hub in sorted(AA_HUBS):
         sel = pred[(pred["org"] == hub) | (pred["des"] == hub)]
         g = sel.groupby(["fold", "target_month"], as_index=False)[["y", *METHODS]].sum()
+        hub_frames.append(g)
         s = metrics.summarize(g, METHODS)
         s.insert(0, "hub", hub)
         hub_rows.append(s)
     out["hub_level"] = pd.concat(hub_rows, ignore_index=True)
     network = pred.groupby(["fold", "target_month"], as_index=False)[["y", *METHODS]].sum()
     out["network_level"] = metrics.summarize(network, METHODS)
+    out["aggregate_interval_table"] = aggregate_intervals(
+        {"airport": airport, "hub": pd.concat(hub_frames, ignore_index=True), "network": network}, cfg.interval)
 
     out["significance"] = pd.DataFrame([metrics.paired_test(pred, "anchor_adjust", ref) for ref in METHODS[1:]])
 
@@ -141,6 +144,32 @@ def interval_table(pred: pd.DataFrame, level: float) -> tuple[pd.DataFrame, pd.D
         cov_rows.append({"fold": fold, "target": level, "coverage": inside.mean(),
                          "volume_weighted_coverage": (inside * cur["y"]).sum() / cur["y"].sum()})
     return _quantiles(p, a), pd.DataFrame(cov_rows)
+
+
+def aggregate_intervals(levels: dict[str, pd.DataFrame], level: float) -> pd.DataFrame:
+    """Interval quantiles for totals, from backtest errors measured at that total.
+
+    Summing market bounds would assume every market misses in the same
+    direction at once, which makes airport and network bands far too wide.
+    """
+    a = (1 - level) / 2
+    rows = []
+    for name, df in levels.items():
+        err = np.log1p(df["y"]) - np.log1p(df["anchor_adjust"])
+        rows.append({"level": name, "q_low": err.quantile(a), "q_high": err.quantile(1 - a), "n": len(err)})
+    return pd.DataFrame(rows)
+
+
+def apply_aggregate_interval(df: pd.DataFrame, table: pd.DataFrame | None, level: str, forecast_col: str = "forecast") -> pd.DataFrame:
+    d = df.copy()
+    if table is None or level not in set(table["level"]):
+        d["lower"] = np.nan
+        d["upper"] = np.nan
+        return d
+    q = table.set_index("level").loc[level]
+    d["lower"] = np.clip(d[forecast_col] * np.exp(q["q_low"]), 0, None)
+    d["upper"] = d[forecast_col] * np.exp(q["q_high"])
+    return d
 
 
 def apply_intervals(df: pd.DataFrame, table: pd.DataFrame, forecast_col: str = "forecast") -> pd.DataFrame:

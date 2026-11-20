@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from aaforecast import data
-from aaforecast.backtest import apply_intervals, interval_table
+from aaforecast.backtest import aggregate_intervals, apply_aggregate_interval, apply_intervals, interval_table
 from aaforecast.config import RunConfig
 from aaforecast.features import FeatureBuilder, anchor_index, feature_columns, training_origins
 from aaforecast.geo import market_attributes
@@ -88,6 +88,18 @@ def test_intervals_from_backtest_errors():
     assert cov["coverage"].between(0.7, 0.9).all()
     out = apply_intervals(pred.rename(columns={"anchor_adjust": "forecast"}), table)
     assert (out["lower"] <= out["forecast"]).all() and (out["upper"] >= out["forecast"]).all()
+
+
+def test_aggregate_intervals_are_narrower_than_summed_bounds():
+    rng = np.random.default_rng(3)
+    n_mkt, n_month = 300, 35
+    f = rng.uniform(100, 1000, (n_mkt, n_month))
+    y = f * np.exp(rng.normal(0, 0.2, (n_mkt, n_month)))  # independent market errors
+    net = pd.DataFrame({"y": y.sum(0), "anchor_adjust": f.sum(0)})
+    table = aggregate_intervals({"network": net}, 0.8)
+    out = apply_aggregate_interval(pd.DataFrame({"forecast": [f.sum(0).mean()]}), table, "network")
+    rel_width = (out["upper"] - out["lower"]).iloc[0] / out["forecast"].iloc[0]
+    assert rel_width < 0.1  # summing 80% market bounds would give roughly 0.5
 
 
 @pytest.mark.parametrize("h", [12, 15, 18])

@@ -94,12 +94,14 @@ def step_forecast(cfg: RunConfig, shrink_override: float | None = None) -> str:
     inp = load_inputs(cfg)
     bt = config.OUTPUT_DIR / "backtest" / _tag(cfg)
     table = pd.read_csv(bt / "interval_table.csv") if (bt / "interval_table.csv").exists() else None
+    agg_path = bt / "aggregate_interval_table.csv"
+    agg = pd.read_csv(agg_path) if agg_path.exists() else None
     if shrink_override is not None:
         cfg.shrink = shrink_override
     elif (bt / "calibration.csv").exists():
         cal = pd.read_csv(bt / "calibration.csv")
         cfg.shrink = float(cal.loc[cal["selected_for_forecast"], "shrink"].iloc[0])
-    res = run_forecast(inp.builder, cfg, table)
+    res = run_forecast(inp.builder, cfg, table, agg)
     d = _out("forecast", _tag(cfg))
     for name, frame in res.items():
         frame.to_csv(d / f"{name}.csv", index=False)

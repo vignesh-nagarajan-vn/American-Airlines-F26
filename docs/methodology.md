@@ -72,6 +72,8 @@ Hub and network bridges are volume-weighted averages of market bridges.
 
 Intervals come from the backtest itself. For each horizon and market-size band, the 10th and 90th percentiles of `log(actual / forecast)` set an 80% band. Thin cells fall back to the whole horizon. Coverage is checked on held-out folds, so the reported coverage is out of sample.
 
+Airport, hub, and network bands come from backtest errors measured at those totals. Adding up market bounds would assume every market misses in the same direction at once, which makes the totals far too wide.
+
 ## Scenarios
 
 A scenario shifts the economy, fuel, or FX features at the origin and re-scores every market. The network total stays at the outlook, so a scenario shows exposure: which hubs and segments gain or lose share. These are sensitivities learned from 2019 onward, not causal effects.
