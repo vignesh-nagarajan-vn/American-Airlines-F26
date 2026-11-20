@@ -16,6 +16,29 @@ The mix model uses momentum, catchment population, migration ties, fares, fuel, 
 
 The model learns relative movement, not the network level. That keeps the post-pandemic rebound, which lifted every market at once, from leaking into a 2027 forecast. The weight on the learned mix is picked by backtest. More detail is in [docs/methodology.md](docs/methodology.md).
 
+## Results
+
+Backtested over five rolling origins, 12 to 18 months ahead. Full write-up, with more charts, in [docs/results.md](docs/results.md).
+
+- **17.9% market WAPE**, against 19.0% for "same month last year" and 24.3% for "last year times trend." The gain holds across market sizes, segments, and horizons, and is significant (Wilcoxon p < 1e-100).
+- **8.5% at the origin airport and 5.6% at the network** once markets are rolled up.
+- **80% intervals cover 73% to 83%** of held-out outcomes, depending on the fold.
+
+![Backtest error by planning level](docs/figures/accuracy_by_level.png)
+
+| | |
+| --- | --- |
+| ![Market error by horizon](docs/figures/accuracy_by_horizon.png) | ![Gain over each baseline](docs/figures/significance.png) |
+| ![Hub accuracy and bias](docs/figures/hub_accuracy.png) | ![Interval coverage](docs/figures/interval_coverage.png) |
+
+The production forecast for July 2027 to January 2028 sits 1.5% below the same months a year earlier with the network held flat. Market momentum and fares pull it down the most.
+
+| | |
+| --- | --- |
+| ![Network driver bridge](docs/figures/driver_bridge.png) | ![Hub outlook](docs/figures/hub_outlook.png) |
+
+Charts show relative values only and are rebuilt with `python scripts/make_figures.py`.
+
 ## What It Produces
 
 | Output | Use |
@@ -84,7 +107,9 @@ src/aaforecast/
   forecast.py, report.py    planning outputs and summaries
   eda.py, stats_tests.py    exploratory analysis and diagnostics
 tests/                      synthetic-data unit tests
+scripts/make_figures.py     rebuild docs/figures from outputs/
 docs/methodology.md         full method write-up
+docs/results.md             results with charts
 ```
 
 ## Team Resources
