@@ -1,7 +1,9 @@
 > This package is now part of the official Team 3 repository, [AsvM45/ADSC_AA_Team3](https://github.com/AsvM45/ADSC_AA_Team3). I am listed there as the [#1 contributor](https://github.com/AsvM45/ADSC_AA_Team3/blob/main/CONTRIBUTORS.md) for the `aaforecast` forecasting package and the macro price analysis script.
 >
 > - Team Members: Asvath Madhan, Vignesh Nagarajan, Pranav Sundar, Johnathan Shirley, Calvin Heiman, Sashwath Nandhakumar
-> - Final Deliverable: [presentation](https://claude.ai/artifact/LxCE5cJuDd19geJV6i9nm6)
+> - Final Deliverable: [Slideshow Presentation](docs/presentation.pdf)
+>
+> <img src="docs/logos/american-airlines.png" alt="American Airlines logo" height="48">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/logos/adsc.png" alt="Aggie Data Science Club logo" height="72">
 
 # American Airlines F26: O&D Demand Forecasting
 
