@@ -1,3 +1,5 @@
+> This package is now part of the official Team 3 repository, [AsvM45/ADSC_AA_Team3](https://github.com/AsvM45/ADSC_AA_Team3). I am listed there as the [#1 contributor](https://github.com/AsvM45/ADSC_AA_Team3/blob/main/CONTRIBUTORS.md) for the `aaforecast` forecasting package and the macro price analysis script.
+
 # American Airlines F26: O&D Demand Forecasting
 
 Aggie Data Science Club, Team 3, working with the American Airlines Operations Research and Advanced Analytics (ORAA) team in Fort Worth, Texas.
