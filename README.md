@@ -3,7 +3,7 @@
 > - Team Members: Asvath Madhan, Vignesh Nagarajan, Pranav Sundar, Johnathan Shirley, Calvin Heiman, Sashwath Nandhakumar
 > - Final Deliverable: [Slideshow Presentation](docs/presentation.pdf)
 >
-> <img src="docs/logos/american-airlines.png" alt="American Airlines logo" height="48">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/logos/adsc.png" alt="Aggie Data Science Club logo" height="72">
+<img src="docs/logos/american-airlines.png" alt="American Airlines logo" height="48">&nbsp;&nbsp;&nbsp;&nbsp;<img src="docs/logos/adsc.png" alt="Aggie Data Science Club logo" height="72">
 
 # American Airlines F26: O&D Demand Forecasting
 
